@@ -1,0 +1,3 @@
+"""
+IRIS core package
+"""
