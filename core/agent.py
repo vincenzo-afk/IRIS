@@ -238,6 +238,10 @@ TOOLS = [
                     required=["task_id"],
                 ),
             ),
+        ]
+    )
+]
+
 
 def execute_tool(name: str, args: Dict[str, Any]) -> str:
     """Dispatch a tool call to the automation layer and return result."""

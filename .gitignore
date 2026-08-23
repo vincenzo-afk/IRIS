@@ -9,6 +9,7 @@ __pycache__/
 dist/
 build/
 logs/*.log
+data/
 screenshots/
 *.jpg
 *.png

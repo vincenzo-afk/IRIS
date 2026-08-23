@@ -1,178 +1,360 @@
-🤖 Project IRIS — Intelligent Real-time Interactive System
-### *Full Build Plan: Autonomous AI Assistant with Vision, Voice, Cursor Overlay & Memory*
+# IRIS
 
-***
+> **Intelligent Real-time Interactive System** — a Python desktop AI assistant that combines screen awareness, voice interaction, persistent memory, and optional computer automation.
 
-## 📌 Project Overview
-
-**Goal:** Build a desktop AI agent that sees your screen, controls mouse/keyboard, speaks and listens, follows your cursor like a floating tutor, acts autonomously, and remembers everything — powered by **Gemini**  and **Mem0**. [datastudios](https://www.datastudios.org/post/google-gemini-multimodal-input-in-2025-vision-audio-and-video-capabilities-explained)
-
-***
-
-## 🏗️ Architecture Overview
-
-```
-┌─────────────────────────────────────────────┐
-│                   IRIS CORE                 │
-│                                             │
-│  ┌──────────┐   ┌──────────┐  ┌──────────┐ │
-│  │  VISION  │   │  VOICE   │  │  MEMORY  │ │
-│  │ (Gemini  │   │ STT+TTS  │  │  (Mem0)  │ │
-│  │  Vision) │   │          │  │          │ │
-│  └──────────┘   └──────────┘  └──────────┘ │
-│                                             │
-│  ┌──────────┐   ┌──────────┐  ┌──────────┐ │
-│  │ CURSOR   │   │ AUTONOMY │  │AUTOMATION│ │
-│  │ OVERLAY  │   │  AGENT   │  │(pyautogui│ │
-│  │(Tkinter) │   │ (Gemini) │  │ /pynput) │ │
-│  └──────────┘   └──────────┘  └──────────┘ │
-└─────────────────────────────────────────────┘
+```text
+██╗██████╗ ██╗███████╗
+██║██╔══██╗██║██╔════╝
+██║██████╔╝██║███████╗
+██║██╔══██╗██║██╔════╝
+██║██║  ██║██║███████║
+╚═╝╚═╝  ╚═╝╚═╝╚══════╝
+Intelligent Real-time Interactive System
 ```
 
-***
+[![Python](https://img.shields.io/badge/python-3.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Repository](https://img.shields.io/badge/GitHub-vincenzo--afk%2FIRIS-181717?logo=github)](https://github.com/vincenzo-afk/IRIS)
 
-## 📦 Module Breakdown
+[Report a bug](https://github.com/vincenzo-afk/IRIS/issues/new) · [Request a feature](https://github.com/vincenzo-afk/IRIS/issues/new) · [View the source](https://github.com/vincenzo-afk/IRIS)
 
-### Module 1 — Screen Vision
-- Capture screen every 1–2 seconds using `mss` or `PIL.ImageGrab` [datastudios](https://www.datastudios.org/post/google-gemini-multimodal-input-in-2025-vision-audio-and-video-capabilities-explained)
-- Send screenshot as base64 image to **Gemini 2.5 Flash** (vision model) [datastudios](https://www.datastudios.org/post/google-gemini-multimodal-input-in-2025-vision-audio-and-video-capabilities-explained)
-- Gemini describes, interprets, and stores screen context
-- Detects active windows, text, buttons, code, errors automatically
+## <a name="table-of-contents"></a>Table of Contents
 
-### Module 2 — Mouse & Keyboard Control
-- `pyautogui` — mouse move, click, scroll, drag, type [youtube](https://www.youtube.com/watch?v=VSZSMAM2c9I)
-- `pynput` — global keyboard/mouse listener (hotkeys, cursor tracking)
-- `win32api` — low-level Windows interactions (optional for Windows users)
-- All actions decided by Gemini based on current screen state + user goal
+- [About the Project](#about-the-project)
+- [Current Status](#current-status)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Agent Tools](#agent-tools)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [Security and Privacy](#security-and-privacy)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-### Module 3 — Voice (Speak + Listen)
-- **STT:** `faster-whisper` (local) or Google Speech API (real-time mic input) [blog](https://blog.google/innovation-and-ai/models-and-research/google-deepmind/google-gemini-updates-io-2025/)
-- **TTS:** `ElevenLabs` or `pyttsx3` for voice output
-- Gemini **Live API** for real-time audio-visual conversation [cloud.google](https://cloud.google.com/blog/products/ai-machine-learning/gemini-live-api-available-on-vertex-ai)
-- Wake word detection to activate listening mode
+## <a name="about-the-project"></a>About the Project
 
-### Module 4 — Cursor Overlay (Tutor Widget)
-- `tkinter` floating window: `overrideredirect(True)` + `attributes('-topmost', True)` [reddit](https://www.reddit.com/r/Python/comments/op1tz0/tkinter_was_shockingly_easy_to_write_a_small/)
-- Tracks real cursor via `pynput.mouse.Listener` — overlay follows cursor position
-- In **TEACH MODE**: overlay pops explanations next to whatever the cursor hovers over
-- Transparent background with rounded UI using `wm_attributes('-transparentcolor', ...)`
+IRIS is a local desktop assistant organized around a small set of cooperating Python modules. It can capture and describe the current screen through Gemini, accept typed or spoken requests, retain relevant memories through Mem0, display cursor-following explanations in a Tkinter overlay, and execute selected desktop actions through `pyautogui` and `pynput`.
 
-### Module 5 — Autonomous Agent Brain
-- Gemini 2.5 Pro as the reasoning engine [datastudios](https://www.datastudios.org/post/google-gemini-multimodal-input-in-2025-vision-audio-and-video-capabilities-explained)
-- Agent loop: `observe → think → plan → act → verify → repeat`
-- Uses **Gemini 2.5 Computer Use** model for computer interaction tasks [storage.googleapis](https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-2-5-Computer-Use-Model-Card.pdf)
-- Tool-calling: each action (click, type, scroll, screenshot) is a callable tool
+The main entry point, `main.py`, exposes five operational modes. `WATCH` continuously analyzes the screen, `CHAT` provides text conversation with screen and memory context, `TEACH` explains the interface near the cursor, `DO` runs an autonomous task loop with Gemini function calling, and `VOICE` listens for the configured wake phrase before routing commands to chat or task execution.
 
-### Module 6 — Persistent Memory (Mem0)
-- `pip install mem0ai` [mem0](https://mem0.ai)
-- Store: user preferences, past tasks, project context, teaching history
-- Retrieve: relevant memories injected into every Gemini prompt [docs.mem0](https://docs.mem0.ai/cookbooks/integrations/agents-sdk-tool)
-- Auto-update memory after every session ends [mem0](https://mem0.ai)
+IRIS has direct access to the screen, microphone, clipboard, keyboard, mouse, and selected web content when the corresponding mode is running. Use it only on a machine and account where you are comfortable granting those permissions, and review tasks before allowing computer-control actions.
 
-***
+## <a name="current-status"></a>Current Status
 
-## 🗂️ File Structure
+This repository is an early-stage desktop application rather than a packaged release. The implementation includes the core modules described below, but it does not currently include a release artifact, Docker configuration, database migration system, automated test suite, or published license.
 
-```
-IRIS/
-│
-├── main.py                  # Entry point, mode selector
-├── config.py                # API keys, user_id, settings
-│
-├── core/
-│   ├── vision.py            # Screen capture + Gemini Vision
-│   ├── voice.py             # STT + TTS pipeline
-│   ├── agent.py             # Autonomous agent brain (Gemini)
-│   ├── memory.py            # Mem0 read/write/search
-│   └── automation.py        # pyautogui + pynput actions
-│
-├── overlay/
-│   ├── cursor_widget.py     # Floating tkinter overlay
-│   └── teach_mode.py        # Cursor-follow teach annotations
-│
-├── tools/
-│   ├── screen_tools.py      # screenshot, find_element, read_text
-│   ├── input_tools.py       # click, type, scroll, hotkey
-│   └── system_tools.py      # open_app, get_clipboard, notify
-│
-└── requirements.txt
+The setup script is Unix-oriented, while parts of the application contain platform-specific branches for Linux, macOS, and Windows. Hardware permissions, desktop-session configuration, audio drivers, available applications, API quotas, and third-party package compatibility can affect runtime behavior.
+
+## <a name="architecture"></a>Architecture
+
+```mermaid
+flowchart TD
+    CLI[main.py\nmode selector] --> MODES{Operational mode}
+    MODES --> WATCH[ScreenWatcher]
+    MODES --> CHAT[Text chat]
+    MODES --> TEACH[TeachMode + Tkinter overlay]
+    MODES --> DO[IRISAgent]
+    MODES --> VOICE[VoiceListener]
+
+    WATCH --> VISION[core/vision.py]
+    CHAT --> AGENT[core/agent.py chat()]
+    DO --> AGENT
+    VOICE --> STT[faster-whisper STT]
+    VOICE --> AGENT
+    TEACH --> VISION
+
+    VISION --> GEMINI[Google Gemini API]
+    AGENT --> GEMINI
+    AGENT --> AUTOMATION[core/automation.py\npyautogui + pynput]
+    AGENT --> WEB[web_search + scrape_url]
+    AGENT --> TASKS[data/tasks.json]
+    AGENT --> MEMORY[core/memory.py]
+    MEMORY --> MEM0[Mem0 local/Qdrant or cloud]
+    VOICE --> TTS[pyttsx3 / ElevenLabs / gTTS]
 ```
 
-***
+The autonomous loop observes the screen, builds relevant memory context, sends a goal to Gemini with the available function declarations, executes returned tools, optionally captures a verification screenshot, and repeats until the model reports completion or the configured step limit is reached.
 
-## 🔄 Operational Modes
+## <a name="features"></a>Features
 
-| Mode | Trigger | Behavior |
+| Capability | Implementation status | Evidence in the repository |
 |---|---|---|
-| **WATCH** | On startup | Silent screen reading, builds context |
-| **TEACH** | `"Hey IRIS, explain this"` | Cursor overlay active, narrates UI elements |
-| **DO** | `"Hey IRIS, do X for me"` | Full autonomous task execution |
-| **CHAT** | Wake word / hotkey | Voice or text conversation mode |
-| **LEARN** | After each session | Mem0 memory update, self-improvement |
+| Screen capture and description | Implemented | `core/vision.py` uses `mss` when available and falls back to `PIL.ImageGrab`; Gemini generates descriptions. |
+| Screen text extraction | Implemented | `read_text_on_screen()` sends a screenshot to Gemini with an OCR-like extraction prompt. |
+| Natural-language element location | Implemented | `find_element()` asks Gemini for an approximate position or `NOT FOUND`. |
+| Background screen watching | Implemented | `ScreenWatcher` captures and caches descriptions at the configured interval. |
+| Text chat | Implemented | `chat()` injects memory and optional current-screen context without tool calling. |
+| Autonomous computer control | Implemented | `IRISAgent` can call mouse, keyboard, application, clipboard, web, and task tools. |
+| Voice input | Implemented | `faster-whisper` transcribes microphone recordings on CPU using `int8` computation. |
+| Voice output | Implemented | `pyttsx3` is the default; ElevenLabs and gTTS paths are available in `core/voice.py`. |
+| Wake-word interaction | Implemented | `VoiceListener` detects the configured `hey iris` phrase before recording a command. |
+| Cursor-following teaching overlay | Implemented | `overlay/cursor_widget.py` and `overlay/teach_mode.py` provide a Tkinter overlay. |
+| Persistent memory | Implemented with backend requirements | `core/memory.py` supports Mem0 Cloud and local Qdrant-backed configuration. |
+| Lightweight task persistence | Implemented | `tools/task_tools.py` stores pending tasks in `data/tasks.json`. |
+| Automated regression tests | Not present | No test directory or test files are currently included. |
+| Packaged deployment | Not present | No Dockerfile, compose file, installer, or release workflow is included. |
 
-***
+## <a name="technology-stack"></a>Technology Stack
 
-## 🛠️ Tech Stack
-
-| Layer | Technology |
+| Area | Technologies used |
 |---|---|
-| LLM + Vision | Gemini 2.5 Flash / Pro  [datastudios](https://www.datastudios.org/post/google-gemini-multimodal-input-in-2025-vision-audio-and-video-capabilities-explained) |
-| Computer Use | Gemini 2.5 Computer Use  [storage.googleapis](https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-2-5-Computer-Use-Model-Card.pdf) |
-| Real-time Voice | Gemini Live API  [cloud.google](https://cloud.google.com/blog/products/ai-machine-learning/gemini-live-api-available-on-vertex-ai) |
-| Memory | Mem0 (`mem0ai`)  [mem0](https://mem0.ai) |
-| Screen Capture | `mss`, `PIL` |
-| Automation | `pyautogui`, `pynput`, `win32api` |
-| Overlay UI | `tkinter` or `PyQt5`  [reddit](https://www.reddit.com/r/Python/comments/op1tz0/tkinter_was_shockingly_easy_to_write_a_small/) |
-| STT | `faster-whisper`, Google Speech |
-| TTS | `ElevenLabs`, `pyttsx3`, `gTTS` |
+| Runtime | Python 3, standard-library threading, logging, argparse, and filesystem APIs |
+| Multimodal AI | `google-generativeai`; model names are configured in `config.py` |
+| Screen vision | `mss`, Pillow, Gemini vision prompts, JPEG/base64 encoding |
+| Computer automation | `pyautogui`, `pynput`, clipboard helpers, and platform-specific process/window helpers |
+| Speech-to-text | `faster-whisper`, `sounddevice`, `soundfile`, NumPy |
+| Text-to-speech | `pyttsx3` by default, with optional ElevenLabs and gTTS branches |
+| Memory | `mem0ai`, local Qdrant configuration, or Mem0 Cloud |
+| Web access | `duckduckgo-search`, `requests`, and BeautifulSoup |
+| Overlay UI | Tkinter and `pynput` cursor tracking |
+| Local persistence | JSON task file at `data/tasks.json`, created at runtime |
 
-***
+The dependency specifications are maintained in [`requirements.txt`](requirements.txt). They use minimum versions for most packages and exact pins for `opencv-python-headless` and `av`; they are not a lockfile.
 
-## 📋 Build Phases
+<details>
+<summary>Complete dependency specification</summary>
 
-**Phase 1 — Foundation (Week 1)**
-- Set up Gemini API + Mem0 SDK
-- Basic screen capture → Gemini Vision → text description
-- Voice input (Whisper STT) + voice output (TTS) working
-
-**Phase 2 — Automation (Week 2)**
-- pyautogui mouse/keyboard control
-- Gemini deciding actions from screen context
-- Basic agent loop: goal → steps → execute
-
-**Phase 3 — Overlay (Week 3)**
-- Floating tkinter cursor widget
-- Real-time cursor tracking with pynput
-- Teach mode: hover detection + Gemini explanation callout
-
-**Phase 4 — Autonomy + Memory (Week 4)**
-- Full agent brain with tool-calling
-- Mem0 memory injection into every prompt
-- Session persistence and preference learning
-
-**Phase 5 — Polish (Week 5)**
-- Mode switcher UI
-- Error recovery and self-correction loops
-- Packaging with PyInstaller or Docker
-
-***
-
-## 📦 Requirements
-
-```txt
-google-generativeai
-mem0ai
-pyautogui
-pynput
-mss
-Pillow
-faster-whisper
-elevenlabs
-pyttsx3
-pywin32
-tkinter
-opencv-python
-sounddevice
-numpy
-python-dotenv
+```text
+google-generativeai>=0.8.0
+mem0ai>=0.1.0
+pyautogui>=0.9.54
+pynput>=1.7.6
+mss>=9.0.1
+Pillow>=10.0.0
+faster-whisper>=1.0.0
+elevenlabs>=1.0.0
+pyttsx3>=2.90
+opencv-python-headless==4.8.1.78
+sounddevice>=0.4.6
+soundfile>=0.12.1
+numpy>=1.24.0
+python-dotenv>=1.0.0
+pyperclip>=1.8.2
+gTTS>=2.5.0
+pygame>=2.5.0
+av==13.1.0
+duckduckgo-search>=6.0.0
+beautifulsoup4>=4.12.0
+requests>=2.30.0
 ```
+</details>
+
+## <a name="getting-started"></a>Getting Started
+
+### Prerequisites
+
+You need Python 3 available as `python3`, a working desktop session, and permission for any capabilities you intend to use. Voice modes require an accessible microphone and audio output. Screen and computer-control modes require a desktop environment in which `mss`, `PIL.ImageGrab`, `pyautogui`, and `pynput` can operate.
+
+A Google Gemini API key is required for the screen, chat, agent, and memory flows. Mem0 Cloud and ElevenLabs keys are optional according to the current configuration. Local memory mode also expects a Qdrant service at `localhost:6333` when the Mem0 local client is successfully initialized.
+
+### Installation
+
+The repository includes the following setup script:
+
+```bash
+git clone https://github.com/vincenzo-afk/IRIS.git
+cd IRIS
+bash setup.sh
+source venv/bin/activate
+```
+
+`setup.sh` checks for `python3`, creates `venv/` if needed, upgrades `pip`, installs `requirements.txt`, and creates `.env` from `.env.example` when it does not already exist.
+
+Edit `.env` and add your Gemini key before starting IRIS:
+
+```bash
+$EDITOR .env
+```
+
+Then launch the interactive mode selector:
+
+```bash
+python main.py
+```
+
+The setup script also documents direct mode commands:
+
+```bash
+python main.py --mode watch
+python main.py --mode chat
+python main.py --mode teach
+python main.py --mode voice
+python main.py --mode do --task "Open Chrome and search for weather"
+```
+
+The `--mode` argument accepts `watch`, `chat`, `teach`, `do`, or `voice`. When `--mode do` is selected, `--task` supplies the natural-language goal; without it, IRIS prompts for a task interactively.
+
+## <a name="configuration"></a>Configuration
+
+Copying `.env.example` to `.env` provides the environment variables currently read by `config.py`:
+
+| Variable | Required | Purpose |
+|---|---:|---|
+| `GEMINI_API_KEY` | Yes | Google Gemini credential used by vision, chat, agent, and local-memory model calls. |
+| `MEM0_API_KEY` | No | Mem0 Cloud credential. The current default `MEMORY_LOCAL = True` means changing that code setting to `False` is also required to select the cloud path. |
+| `ELEVENLABS_API_KEY` | No | Enables the ElevenLabs branch when `TTS_ENGINE` is changed from its default. |
+| `IRIS_USER_ID` | No | Mem0 user namespace; defaults to `iris_user_01`. |
+| `IRIS_USER_NAME` | No | Name included in assistant prompts; defaults to `User`. |
+
+```dotenv
+GEMINI_API_KEY=your_gemini_api_key_here
+MEM0_API_KEY=
+ELEVENLABS_API_KEY=
+IRIS_USER_ID=iris_user_01
+IRIS_USER_NAME=YourName
+```
+
+Additional runtime settings are constants in [`config.py`](config.py), not environment variables. They include the Gemini model names, two-second screen capture interval, JPEG quality, Whisper model name, text-to-speech engine, `hey iris` wake word, memory result count, local-memory switch, overlay appearance, 20-step maximum agent loop, and screenshot verification behavior.
+
+### Data and secrets
+
+`.env`, logs, screenshots, audio files, bytecode, virtual environments, build artifacts, and the local `data/` task store are excluded by [`.gitignore`](.gitignore). Never commit API keys or personal screen/audio captures. The program writes logs to `logs/iris.log` and creates screenshots and task data directories at runtime.
+
+## <a name="usage"></a>Usage
+
+### Watch mode
+
+`WATCH` starts `ScreenWatcher`, periodically captures the complete desktop, sends the image to Gemini for a description, and prints a short live context line:
+
+```bash
+python main.py --mode watch
+```
+
+Press `Ctrl+C` to exit.
+
+### Chat mode
+
+`CHAT` reads text from the terminal, adds relevant memory and the latest screen description to the prompt, speaks each response through the configured TTS engine, and exits when you enter `quit`, `exit`, or `bye`:
+
+```bash
+python main.py --mode chat
+```
+
+### Teach mode
+
+`TEACH` starts a topmost cursor-following Tkinter widget. After the cursor remains over an area for the configured debounce interval, IRIS captures the screen region and asks Gemini for a concise explanation:
+
+```bash
+python main.py --mode teach
+```
+
+### Autonomous task mode
+
+`DO` starts screen awareness and the Gemini function-calling agent. The agent can perform multiple actions and stops after `MAX_AGENT_STEPS` or after calling `task_complete`:
+
+```bash
+python main.py --mode do --task "Open a terminal and type a short greeting"
+```
+
+Because this mode can control the mouse and keyboard, use narrowly scoped goals and monitor the desktop while it runs.
+
+### Voice mode
+
+`VOICE` starts the screen watcher, agent, overlay, and microphone listener. The listener records short utterances, transcribes them with faster-whisper, detects the configured wake word, and routes task-like commands to the autonomous agent or other commands to chat:
+
+```bash
+python main.py --mode voice
+```
+
+The default wake phrase is `hey iris`. The listener uses CPU-based Whisper inference with an `int8` compute type and records until silence or a duration limit is reached.
+
+## <a name="agent-tools"></a>Agent Tools
+
+IRIS exposes the following Gemini function-calling tools from `core/agent.py`:
+
+| Tool group | Available functions |
+|---|---|
+| Mouse | `move_mouse`, `click`, `double_click`, `right_click`, `drag`, `scroll` |
+| Keyboard and clipboard | `type_text`, `press_key`, `hotkey`, `get_clipboard` |
+| Vision | `take_screenshot` |
+| Applications | `open_app` |
+| Web | `web_search`, `scrape_url` |
+| Tasks | `add_task`, `list_tasks`, `mark_task_done` |
+| Completion | `task_complete` |
+
+The web helpers use DuckDuckGo search results and fetch page text with `requests` and BeautifulSoup. They are not an HTTP API exposed by IRIS; the repository does not contain a web server or public REST endpoints.
+
+## <a name="project-structure"></a>Project Structure
+
+```text
+IRIS/
+├── .env.example              # Environment-variable template
+├── .gitignore                # Secrets and runtime-artifact exclusions
+├── README.md                 # Project documentation
+├── config.py                 # Models, keys, runtime settings, and paths
+├── main.py                   # CLI entry point and mode orchestration
+├── requirements.txt          # Python dependency specifications
+├── setup.sh                  # Virtual-environment and dependency setup
+├── core/
+│   ├── __init__.py
+│   ├── agent.py              # Gemini tool schema and autonomous loop
+│   ├── automation.py         # Mouse, keyboard, clipboard, and cursor helpers
+│   ├── memory.py             # Mem0 memory adapter
+│   ├── vision.py             # Screen capture and Gemini vision operations
+│   └── voice.py              # STT, TTS, and wake-word listener
+├── overlay/
+│   ├── __init__.py
+│   ├── cursor_widget.py      # Cursor-following Tkinter widget
+│   └── teach_mode.py         # Hover-to-explain behavior
+└── tools/
+    ├── __init__.py
+    ├── input_tools.py        # Input helper exports
+    ├── screen_tools.py       # Screen helper wrappers
+    ├── system_tools.py       # App, clipboard, notification, and window helpers
+    ├── task_tools.py         # JSON-backed task persistence
+    └── web_tools.py          # Search and page-text extraction
+```
+
+Runtime directories such as `venv/`, `logs/`, `screenshots/`, and `data/` are created or populated locally and are intentionally not part of the source tree.
+
+## <a name="testing"></a>Testing
+
+No automated test suite is currently included. The repository now includes a lightweight GitHub Actions syntax check that compiles the Python source files without importing third-party packages. Run the same check locally with:
+
+```bash
+python -m compileall -q core overlay tools main.py config.py
+```
+
+This verifies Python syntax only; it does not validate API credentials, microphone access, GUI behavior, desktop permissions, model responses, or end-to-end computer-control safety.
+
+## <a name="deployment"></a>Deployment
+
+IRIS currently targets local desktop execution. There is no Dockerfile, container image, installer, cloud deployment manifest, or release package in the repository. The supported workflow is to create a virtual environment, install the requirements, configure `.env`, and run `main.py` on the desktop that IRIS is intended to observe or control.
+
+A production deployment would need an explicit packaging strategy, platform-specific permission documentation, dependency locking, service/API-key isolation, a persistent memory service plan, and end-to-end tests before it should be run unattended.
+
+## <a name="contributing"></a>Contributing
+
+Contributions are welcome through focused pull requests. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for the local setup, validation command, branch guidance, and pull-request expectations. Keep changes narrowly scoped, avoid committing secrets or runtime data, and document behavior changes in the README when applicable.
+
+## <a name="security-and-privacy"></a>Security and Privacy
+
+IRIS is a privileged desktop automation program. Depending on the mode and configuration, it can capture screen contents, record microphone input, read the clipboard, send images or text to third-party AI services, fetch web pages, and control the mouse and keyboard. Do not run it with access to sensitive sessions unless you have reviewed the code and understand the data flow.
+
+Use environment variables for credentials, keep `.env` local, avoid unattended `DO` or `VOICE` operation on sensitive machines, and inspect the target screen before granting an action-heavy goal. Report vulnerabilities privately according to [`SECURITY.md`](SECURITY.md) rather than opening a public issue with exploit details.
+
+## <a name="license"></a>License
+
+No `LICENSE` file is currently present in this repository. Until the owner adds a license, the source should be treated as **all rights reserved** and should not be redistributed or reused beyond permissions granted by the copyright holder.
+
+## <a name="acknowledgments"></a>Acknowledgments
+
+IRIS is maintained by [vincenzo-afk](https://github.com/vincenzo-afk). The implementation builds on Google Generative AI, Mem0, Pillow, mss, pyautogui, pynput, faster-whisper, Tkinter, DuckDuckGo Search, Requests, BeautifulSoup, and related Python packages listed in [`requirements.txt`](requirements.txt).
+
+## References
+
+1. [Google Gemini API documentation](https://ai.google.dev/gemini-api/docs)
+2. [Mem0 documentation](https://docs.mem0.ai/)
+3. [Python documentation](https://docs.python.org/3/)
+4. [GitHub Topics documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics)
+
+[Back to top](#iris)
+
+---
+
+Built by [vincenzo-afk](https://github.com/vincenzo-afk).
