@@ -17,3 +17,6 @@ screenshots/
 *.mp3
 .DS_Store
 *.spec
+video/node_modules/
+video/.npm/
+npm-debug.log*

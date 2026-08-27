@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>IRIS — Intelligent Real-time Interactive System</title>
+    <script src="./node_modules/gsap/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ink: #eef7f2;
+        --muted: #a8c1b5;
+        --canvas: #07110e;
+        --panel: #0c1d18;
+        --line: rgba(160, 255, 205, 0.18);
+        --mint: #8dffc7;
+        --lime: #d7ff67;
+        --cyan: #72d9ff;
+        --violet: #b9a7ff;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+      body {
+        background: var(--canvas);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--canvas);
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      .ground {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 80% 14%, rgba(141, 255, 199, 0.14), transparent 28%),
+          radial-gradient(circle at 12% 86%, rgba(114, 217, 255, 0.09), transparent 26%),
+          linear-gradient(135deg, #07110e 0%, #0b1714 55%, #07110e 100%);
+      }
+      .grid {
+        position: absolute;
+        inset: -20%;
+        opacity: 0.18;
+        background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 56px 56px;
+        transform: rotate(-8deg);
+      }
+      .eyebrow {
+        color: var(--mint);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+      }
+      .headline {
+        margin: 0;
+        max-width: 1200px;
+        font-size: 108px;
+        line-height: 0.96;
+        letter-spacing: -0.055em;
+      }
+      .headline .accent { color: var(--lime); }
+      .subhead {
+        margin: 30px 0 0;
+        max-width: 860px;
+        color: var(--muted);
+        font-size: 30px;
+        line-height: 1.35;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 650;
+        letter-spacing: 0.02em;
+        background: rgba(12, 29, 24, 0.72);
+      }
+      .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 18px var(--lime); }
+      .corner {
+        position: absolute;
+        top: 70px;
+        right: 76px;
+        color: rgba(238, 247, 242, 0.45);
+        font-size: 18px;
+        letter-spacing: 0.18em;
+      }
+      .left-pad { position: absolute; left: 112px; top: 156px; }
+      .center { display: grid; place-items: center; text-align: center; }
+      .center .subhead { margin-left: auto; margin-right: auto; }
+
+      .iris-mark {
+        position: relative;
+        width: 420px;
+        height: 420px;
+        margin: 0 auto 54px;
+        border: 1px solid rgba(141, 255, 199, 0.28);
+        border-radius: 50%;
+        box-shadow: 0 0 0 32px rgba(141, 255, 199, 0.035), 0 0 0 76px rgba(141, 255, 199, 0.022), 0 0 110px rgba(141, 255, 199, 0.13);
+      }
+      .iris-mark::before, .iris-mark::after {
+        content: "";
+        position: absolute;
+        inset: 72px;
+        border: 1px solid rgba(141, 255, 199, 0.34);
+        border-radius: 50%;
+      }
+      .iris-mark::after { inset: 146px; background: var(--lime); border: 0; box-shadow: 0 0 44px rgba(215, 255, 103, 0.65); }
+      .iris-crosshair { position: absolute; inset: 50% auto auto 0; width: 100%; height: 1px; background: rgba(141, 255, 199, 0.18); }
+      .iris-crosshair::after { content: ""; position: absolute; left: 50%; top: -210px; width: 1px; height: 420px; background: rgba(141, 255, 199, 0.18); }
+
+      .section-title { margin: 22px 0 0; font-size: 64px; line-height: 1.04; letter-spacing: -0.04em; }
+      .section-copy { max-width: 710px; color: var(--muted); font-size: 27px; line-height: 1.35; }
+      .feature-row { display: flex; gap: 22px; margin-top: 46px; }
+      .feature-card {
+        width: 340px;
+        min-height: 154px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: linear-gradient(150deg, rgba(12, 29, 24, 0.9), rgba(12, 29, 24, 0.48));
+      }
+      .feature-card strong { display: block; margin-bottom: 12px; color: var(--ink); font-size: 25px; }
+      .feature-card span { color: var(--muted); font-size: 18px; line-height: 1.35; }
+      .signal { color: var(--cyan); }
+      .memory { color: var(--violet); }
+      .action { color: var(--lime); }
+
+      .mock-window {
+        position: absolute;
+        top: 170px;
+        right: 108px;
+        width: 890px;
+        height: 680px;
+        border: 1px solid rgba(141, 255, 199, 0.32);
+        border-radius: 22px;
+        background: rgba(7, 17, 14, 0.84);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36);
+        overflow: hidden;
+      }
+      .window-bar { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 22px; border-bottom: 1px solid var(--line); }
+      .window-dot { width: 12px; height: 12px; border-radius: 50%; background: #35564a; }
+      .window-title { margin-left: 8px; color: var(--muted); font: 600 16px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .screen-grid { position: relative; height: calc(100% - 58px); padding: 28px; background: linear-gradient(160deg, rgba(18, 44, 35, 0.55), rgba(4, 11, 9, 0.8)); }
+      .screen-heading { color: var(--muted); font: 600 18px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .screen-line { width: 70%; height: 18px; margin-top: 24px; border-radius: 9px; background: rgba(141, 255, 199, 0.24); }
+      .screen-line.short { width: 42%; margin-top: 12px; background: rgba(141, 255, 199, 0.12); }
+      .screen-card { position: absolute; left: 28px; bottom: 36px; width: 390px; padding: 22px; border: 1px solid rgba(114, 217, 255, 0.28); border-radius: 16px; background: rgba(4, 14, 12, 0.82); }
+      .screen-card-label { color: var(--cyan); font: 700 14px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.16em; text-transform: uppercase; }
+      .screen-card-text { margin-top: 14px; color: var(--ink); font-size: 24px; line-height: 1.2; }
+      .cursor { position: absolute; left: 72%; top: 43%; width: 0; height: 0; border-top: 28px solid var(--ink); border-right: 9px solid transparent; border-left: 9px solid transparent; transform: rotate(-34deg); filter: drop-shadow(0 0 10px rgba(141, 255, 199, 0.65)); }
+      .cursor-ring { position: absolute; left: 67%; top: 34%; width: 130px; height: 130px; border: 2px solid var(--lime); border-radius: 50%; box-shadow: 0 0 30px rgba(215, 255, 103, 0.4); }
+
+      .loop-panel { position: absolute; left: 112px; top: 190px; width: 640px; }
+      .loop-step { position: relative; display: flex; align-items: center; gap: 24px; margin-bottom: 22px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 16px; background: rgba(12, 29, 24, 0.72); }
+      .step-number { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 50%; color: var(--canvas); font-weight: 800; background: var(--lime); }
+      .loop-step h3 { margin: 0 0 5px; font-size: 25px; }
+      .loop-step p { margin: 0; color: var(--muted); font-size: 18px; }
+      .loop-line { position: absolute; left: 24px; top: 80px; bottom: -22px; width: 1px; background: rgba(215, 255, 103, 0.34); }
+      .loop-step:last-child .loop-line { display: none; }
+      .agent-card { position: absolute; right: 132px; top: 238px; width: 700px; padding: 34px; border: 1px solid rgba(185, 167, 255, 0.35); border-radius: 22px; background: linear-gradient(145deg, rgba(31, 24, 57, 0.86), rgba(8, 19, 16, 0.86)); }
+      .agent-card .mono { color: var(--violet); font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.14em; text-transform: uppercase; }
+      .agent-card h3 { margin: 22px 0 14px; font-size: 40px; letter-spacing: -0.03em; }
+      .agent-card p { color: #d8d2ff; font-size: 22px; line-height: 1.4; }
+      .tool-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+      .tool { padding: 10px 14px; border-radius: 999px; color: var(--ink); font: 600 15px ui-monospace, SFMono-Regular, Menlo, monospace; background: rgba(185, 167, 255, 0.14); }
+
+      .voice-layout { position: absolute; left: 112px; top: 166px; width: 1696px; }
+      .voice-layout .section-copy { max-width: 920px; }
+      .mode-row { display: flex; gap: 18px; margin-top: 70px; }
+      .mode { flex: 1; min-height: 220px; padding: 28px; border: 1px solid var(--line); border-radius: 18px; background: rgba(12, 29, 24, 0.7); }
+      .mode-kicker { color: var(--mint); font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.16em; }
+      .mode h3 { margin: 28px 0 12px; font-size: 31px; }
+      .mode p { margin: 0; color: var(--muted); font-size: 19px; line-height: 1.35; }
+
+      .final-mark { width: 180px; height: 180px; margin: 0 auto 34px; border: 1px solid rgba(141, 255, 199, 0.35); border-radius: 50%; box-shadow: 0 0 0 20px rgba(141, 255, 199, 0.035), 0 0 60px rgba(141, 255, 199, 0.18); }
+      .final-mark::after { content: ""; display: block; width: 64px; height: 64px; margin: 57px auto 0; border-radius: 50%; background: var(--lime); box-shadow: 0 0 34px rgba(215, 255, 103, 0.7); }
+      .footer-note { margin-top: 38px; color: rgba(168, 193, 181, 0.72); font: 600 16px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="iris-overview" data-start="0" data-width="1920" data-height="1080" data-duration="27">
+      <section id="scene-intro" class="clip" data-start="0" data-duration="4.5" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">IRIS / 001</div>
+        <div class="center" style="position:absolute;inset:0;">
+          <div id="intro-mark" class="iris-mark"><div class="iris-crosshair"></div></div>
+          <div id="intro-eyebrow" class="eyebrow">Intelligent Real-time Interactive System</div>
+          <h1 id="intro-title" class="headline" style="margin-top:20px;">A desktop assistant<br /><span class="accent">that can see.</span></h1>
+          <p id="intro-subhead" class="subhead">Screen awareness, voice interaction, persistent memory, and optional computer automation — running locally on your desktop.</p>
+        </div>
+      </section>
+
+      <section id="scene-observe" class="clip" data-start="4.5" data-duration="5" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">01 / OBSERVE</div>
+        <div class="left-pad"><div id="observe-kicker" class="eyebrow">01 / Observe</div><h2 id="observe-title" class="section-title">IRIS keeps context<br /><span class="accent">in view.</span></h2><p id="observe-copy" class="section-copy">The screen watcher captures and describes the desktop through Gemini, while the teaching overlay explains the area beneath your cursor.</p></div>
+        <div id="mock-window" class="mock-window"><div class="window-bar"><span class="window-dot"></span><span class="window-dot"></span><span class="window-dot"></span><span class="window-title">iris / screen_context</span></div><div class="screen-grid"><div class="screen-heading">CURRENT DESKTOP / ANALYSIS READY</div><div class="screen-line"></div><div class="screen-line short"></div><div class="screen-card"><div class="screen-card-label">TEACH MODE</div><div class="screen-card-text">“This panel controls your active workspace.”</div></div><div id="cursor-ring" class="cursor-ring"></div><div id="cursor" class="cursor"></div></div></div>
+      </section>
+
+      <section id="scene-memory" class="clip" data-start="9.5" data-duration="4.5" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">02 / REMEMBER</div>
+        <div class="left-pad"><div id="memory-kicker" class="eyebrow">02 / Remember</div><h2 id="memory-title" class="section-title">Conversations<br /><span class="accent">build continuity.</span></h2><p id="memory-copy" class="section-copy">Mem0-backed memory supplies relevant context to chat and task flows, with local Qdrant configuration or an optional cloud path.</p><div class="feature-row"><div id="memory-card" class="feature-card"><strong class="memory">Persistent memory</strong><span>Relevant memories are injected into prompts with a configurable top-five context window.</span></div><div id="task-card" class="feature-card"><strong class="signal">Lightweight tasks</strong><span>Pending tasks persist in a local JSON store and can be completed by the agent.</span></div></div></div>
+      </section>
+
+      <section id="scene-act" class="clip" data-start="14" data-duration="5.4" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">03 / ACT + VERIFY</div>
+        <div id="loop-panel" class="loop-panel"><div id="act-kicker" class="eyebrow">03 / Act + Verify</div><h2 id="act-title" class="section-title">From intent<br /><span class="accent">to action.</span></h2><div style="margin-top:34px;"><div id="loop-1" class="loop-step"><div class="step-number">1</div><div><h3>Observe</h3><p>Read the latest screen and memory context.</p></div><div class="loop-line"></div></div><div id="loop-2" class="loop-step"><div class="step-number">2</div><div><h3>Choose a tool</h3><p>Mouse, keyboard, apps, web, or task actions.</p></div><div class="loop-line"></div></div><div id="loop-3" class="loop-step"><div class="step-number">3</div><div><h3>Verify</h3><p>Capture a fresh screenshot after each action.</p></div><div class="loop-line"></div></div></div></div>
+        <div id="agent-card" class="agent-card"><div class="mono">Gemini function-calling loop</div><h3>Computer control with a visible safety boundary.</h3><p>DO mode supports up to 20 tool calls per goal and stops when the task is complete. Keep the desktop in view and use narrowly scoped goals.</p><div class="tool-row"><span class="tool">move_mouse</span><span class="tool">type_text</span><span class="tool">open_app</span><span class="tool">web_search</span><span class="tool">task_complete</span></div></div>
+      </section>
+
+      <section id="scene-voice" class="clip" data-start="19.4" data-duration="4.6" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">04 / CHOOSE YOUR MODE</div>
+        <div class="voice-layout"><div id="voice-kicker" class="eyebrow">04 / Choose your mode</div><h2 id="voice-title" class="section-title">One assistant.<br /><span class="accent">Five ways to work.</span></h2><p id="voice-copy" class="section-copy">Start with a simple command, then choose the depth of assistance your desktop needs.</p><div class="mode-row"><div id="mode-watch" class="mode"><div class="mode-kicker">WATCH</div><h3>See the desktop</h3><p>Continuously analyze the current screen and print live context.</p></div><div id="mode-chat" class="mode"><div class="mode-kicker">CHAT</div><h3>Ask with context</h3><p>Talk through the terminal with memory and optional screen awareness.</p></div><div id="mode-teach" class="mode"><div class="mode-kicker">TEACH</div><h3>Explain on hover</h3><p>Move the cursor over an area for a concise interface explanation.</p></div><div id="mode-voice" class="mode"><div class="mode-kicker">VOICE</div><h3>Say “hey iris”</h3><p>Transcribe short commands and route them to chat or task execution.</p></div></div></div>
+      </section>
+
+      <section id="scene-close" class="clip" data-start="24" data-duration="3" data-track-index="1">
+        <div class="ground"></div><div class="grid"></div><div class="corner">IRIS / READY</div>
+        <div class="center" style="position:absolute;inset:0;"><div id="final-mark" class="final-mark"></div><div id="final-eyebrow" class="eyebrow">Local desktop intelligence</div><h2 id="final-title" class="headline" style="margin-top:20px;font-size:82px;">Make your screen<br /><span class="accent">more understandable.</span></h2><div id="final-note" class="footer-note">github.com/vincenzo-afk/IRIS</div></div>
+      </section>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const ease = "power3.out";
+      tl.from("#intro-mark", { scale: 0.72, opacity: 0, duration: 0.8, ease }, 0.15)
+        .from("#intro-eyebrow", { y: 26, opacity: 0, duration: 0.55, ease }, 0.55)
+        .from("#intro-title", { y: 38, opacity: 0, duration: 0.7, ease }, 0.78)
+        .from("#intro-subhead", { y: 24, opacity: 0, duration: 0.6, ease }, 1.28)
+        .from("#observe-kicker, #observe-title, #observe-copy", { x: -45, opacity: 0, duration: 0.65, stagger: 0.12, ease }, 4.7)
+        .from("#mock-window", { x: 70, opacity: 0, scale: 0.96, duration: 0.8, ease }, 4.85)
+        .from("#cursor-ring", { scale: 0.5, opacity: 0, duration: 0.45, ease }, 6.25)
+        .from("#cursor", { x: -24, y: 20, opacity: 0, duration: 0.4, ease }, 6.45)
+        .from("#memory-kicker, #memory-title, #memory-copy", { x: -45, opacity: 0, duration: 0.65, stagger: 0.12, ease }, 9.7)
+        .from("#memory-card, #task-card", { y: 34, opacity: 0, duration: 0.55, stagger: 0.16, ease }, 10.65)
+        .from("#act-kicker, #act-title", { x: -44, opacity: 0, duration: 0.6, stagger: 0.12, ease }, 14.15)
+        .from("#loop-1, #loop-2, #loop-3", { x: -32, opacity: 0, duration: 0.5, stagger: 0.22, ease }, 14.65)
+        .from("#agent-card", { x: 70, opacity: 0, duration: 0.78, ease }, 14.55)
+        .from("#voice-kicker, #voice-title, #voice-copy", { y: 28, opacity: 0, duration: 0.6, stagger: 0.12, ease }, 19.25)
+        .from("#mode-watch, #mode-chat, #mode-teach, #mode-voice", { y: 38, opacity: 0, duration: 0.52, stagger: 0.13, ease }, 20.35)
+        .from("#final-mark", { scale: 0.7, opacity: 0, duration: 0.55, ease }, 24.15)
+        .from("#final-eyebrow, #final-title, #final-note", { y: 26, opacity: 0, duration: 0.5, stagger: 0.12, ease }, 24.5);
+      window.__timelines["iris-overview"] = tl;
+    </script>
+  </body>
+</html>
